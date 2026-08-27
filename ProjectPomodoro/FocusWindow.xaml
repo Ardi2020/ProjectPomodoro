@@ -1,10 +1,7 @@
-<Window x:Class="ProjectPomodoro.FocusWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Focus" Width="360" Height="280" WindowStyle="ToolWindow" Topmost="True" Background="#153B3A" Foreground="White" ResizeMode="NoResize">
-    <Border Padding="24"><StackPanel>
-        <TextBlock Text="FOCUS" FontSize="12" FontWeight="Bold" Foreground="#F2B880"/>
-        <TextBlock x:Name="TitleText" FontSize="22" FontWeight="Bold" Margin="0,12,0,4" TextWrapping="Wrap"/>
-        <TextBlock x:Name="WhyText" Foreground="#C7D8D1" TextWrapping="Wrap" Margin="0,0,0,12"/>
-        <TextBlock x:Name="RemainingText" Text="25:00" FontSize="48" FontWeight="Bold"/>
-        <TextBlock x:Name="MotivationText" Foreground="#F2B880" TextWrapping="Wrap" Margin="0,8,0,14"/>
-        <Button Content="Stop focus" Click="Stop_Click" Width="110" HorizontalAlignment="Left" Padding="10,7"/>
-    </StackPanel></Border>
+<Window x:Class="ProjectPomodoro.FocusWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Focus" Icon="/Assets/app.ico" WindowState="Maximized" WindowStyle="None" Topmost="True" Background="{StaticResource Accent}" Foreground="{StaticResource OnAccent}">
+    <Grid Margin="80,74,80,70"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <DockPanel><StackPanel Orientation="Horizontal"><Border Width="12" Height="12" Background="{StaticResource OnAccent}" Margin="0,0,20,0"/><TextBlock Text="FOCUS · POMODORO" FontSize="15" FontWeight="ExtraBold" Foreground="{StaticResource AccentTint200}"/></StackPanel><Button DockPanel.Dock="Right" Content="MINIMIZE" Style="{StaticResource GhostButton}" Foreground="{StaticResource AccentTint200}"/></DockPanel>
+        <StackPanel Grid.Row="1" VerticalAlignment="Center" MaxWidth="760"><TextBlock x:Name="RemainingText" Text="25:00" FontFamily="{StaticResource FontBody}" FontSize="110" FontWeight="ExtraBold" Foreground="{StaticResource OnAccent}"/><ProgressBar Height="8" Maximum="1500" Value="0" Background="{StaticResource AccentDeep}" Foreground="{StaticResource OnAccent}" BorderThickness="0" Margin="0,18,0,22"/><TextBlock x:Name="TitleText" FontSize="28" FontWeight="Bold" TextWrapping="Wrap"/><TextBlock x:Name="WhyText" Foreground="{StaticResource AccentTint200}" FontSize="17" TextWrapping="Wrap" Margin="0,10,0,0"/><TextBlock x:Name="MotivationText" Foreground="{StaticResource AccentTint200}" FontSize="17" FontStyle="Italic" TextWrapping="Wrap" Margin="0,22,0,0"/></StackPanel>
+        <StackPanel Grid.Row="2" Orientation="Horizontal"><Button Content="Pause" Style="{StaticResource SecondaryButton}" Foreground="{StaticResource Accent}" Background="{StaticResource OnAccent}" Margin="0,0,18,0"/><Button Content="Stop early" Click="Stop_Click" Style="{StaticResource SecondaryButton}" Foreground="{StaticResource OnAccent}" BorderBrush="{StaticResource OnAccent}"/></StackPanel>
+    </Grid>
 </Window>
