@@ -1,0 +1,2200 @@
+{
+  "metadata": {
+    "product_name": "Project-Focused Pomodoro",
+    "version": "2.0",
+    "status": "IMPLEMENTATION_READY",
+    "language": "English",
+    "categories": [
+      "Automation Workflow"
+    ],
+    "readiness_score": 97,
+    "quality_score": 96,
+    "prd_owner": null,
+    "source_materials": [
+      "User discovery conversation through 2026-08-26",
+      "01_PRD_STANDARD.md",
+      "02_DISCOVERY_ENGINE.md",
+      "04_REQUIREMENT_WRITING_STANDARD.md",
+      "05_TECHNOLOGY_DECISION_GUIDE.md",
+      "06_CODING_AGENT_HANDOFF_STANDARD.md",
+      "07_PRD_QUALITY_RUBRIC.md",
+      "08_SECURITY_PRIVACY_BASELINE.md",
+      "10_FAILURE_EXAMPLES.md",
+      "13_PRD_OUTPUT_SCHEMA.json"
+    ]
+  },
+  "product_context": {
+    "executive_summary": "A local Windows 11 project-execution application that connects Project/Milestone/Task/Subtask planning to 25-minute Pomodoro focus sessions. Users organize actionable work, start a Pomodoro directly from a Task or Subtask, see work context and motivational messages in a compact Always-on-Top window, deliberately handle early-stop friction, and decide after each completed focus interval whether the work item is done, needs a break, or needs another Pomodoro. Progress is calculated from completed actionable leaf work items, while Task/Milestone/Project completion remains an explicit user decision. The MVP is local-only with no login, cloud sync, collaboration, AI, or network dependency.",
+    "problem_statement": "A standalone Pomodoro timer records time without connecting focus to concrete project outcomes. The target user needs a lightweight way to break projects into actionable work, focus on one real Task/Subtask at a time, resist premature stopping, preserve effort history, and explicitly close work when it is actually finished without turning the product into a heavyweight project-management suite.",
+    "product_vision": "Turn project plans into deliberate, context-rich focus sessions: choose the next actionable work item, focus for 25 minutes, then consciously continue, rest, or mark the work complete.",
+    "primary_users": [
+      {
+        "name": "Local Windows knowledge worker",
+        "context": "Works on projects on a Windows 11 PC and wants a compact focus companion rather than a collaborative project-management system.",
+        "jtbd": "When I have project work to execute, help me choose a concrete Task/Subtask, stay focused for one Pomodoro, remember why the work matters, and deliberately decide whether it is complete.",
+        "pain_points": [
+          "Standalone Pomodoro sessions lack task context.",
+          "Large project-management tools can create overhead.",
+          "It is easy to stop a focus interval prematurely."
+        ],
+        "desired_outcomes": [
+          "Every focus session is linked to real work.",
+          "Project progress reflects completed actionable work.",
+          "The timer stays visible without obstructing work."
+        ],
+        "provenance": "USER_INFERRED"
+      }
+    ],
+    "secondary_users": [],
+    "constraints": [
+      {
+        "text": "Target platform is Windows 11 desktop.",
+        "provenance": "USER_CONFIRMED",
+        "source": "Discovery",
+        "requires_confirmation": false
+      },
+      {
+        "text": "Confirmed implementation stack: C# + .NET 10 + WPF.",
+        "provenance": "USER_CONFIRMED",
+        "source": "Discovery",
+        "requires_confirmation": false
+      },
+      {
+        "text": "MVP is local-only and requires no login, cloud, or internet for core operation.",
+        "provenance": "USER_CONFIRMED",
+        "source": "Discovery",
+        "requires_confirmation": false
+      },
+      {
+        "text": "Machine schema lacks a Desktop Application category; Automation Workflow is used only as a schema-compatible routing label and is not the authoritative product category.",
+        "provenance": "ASSUMPTION",
+        "source": "13_PRD_OUTPUT_SCHEMA.json",
+        "requires_confirmation": false
+      }
+    ]
+  },
+  "scope": {
+    "mvp": [
+      "Project create/view/edit/manual completion/archive/restore/conditional delete",
+      "Optional Milestones",
+      "Tasks and optional Subtasks with TODO/IN_PROGRESS/DONE",
+      "Optional Why / Desired Outcome on Task/Subtask",
+      "Leaf-work-item progress calculation",
+      "25-minute Pomodoro started from Task or Subtask",
+      "Multiple Pomodoros per work item",
+      "Small movable Always-on-Top Focus/Break window",
+      "User-configured Focus and Cancel motivational messages",
+      "Early-stop motivational confirmation",
+      "Manual post-focus choice: Mark Done, Take Break, Start Another Pomodoro",
+      "5/10/custom manual Break",
+      "Return to same work context after Break",
+      "Immutable MVP Pomodoro history and focused-time summary",
+      "Manual Task/Subtask/Milestone/Project completion",
+      "Incomplete-child warning with Mark Done Anyway",
+      "Local persistence, completion sound setting, sleep/lock-correct timing",
+      "Single active Focus or Break timer"
+    ],
+    "post_mvp": [
+      "Crash/forced-termination session recovery if later approved",
+      "Performance optimization after representative workload target is known"
+    ],
+    "out_of_scope": [
+      "Cloud sync",
+      "Accounts/login",
+      "Multi-device sync",
+      "Teams/collaboration",
+      "Shared projects",
+      "Task assignment",
+      "Comments",
+      "Attachments/file management",
+      "Kanban board",
+      "Gantt chart",
+      "Calendar",
+      "Task dependencies/critical path",
+      "Priority scoring",
+      "Due-date reminder system",
+      "Recurring tasks",
+      "Blocked/On Hold workflow",
+      "Estimate-vs-actual analytics",
+      "Productivity dashboard",
+      "Daily/weekly statistics dashboard",
+      "Streaks/gamification/achievements",
+      "AI task decomposition",
+      "AI recommendations",
+      "Automatic task prioritization",
+      "Automatic next-task selection",
+      "Automatic Pomodoro start",
+      "Automatic Break start",
+      "Web/mobile/browser versions",
+      "Public/collaboration APIs"
+    ],
+    "deferred_decisions": [
+      "Final product name",
+      "Installer/distribution format",
+      "Exact visual theme/typography/window dimensions",
+      "Exact scrolling speed/message cadence",
+      "System tray behavior",
+      "Windows auto-start behavior",
+      "Representative workload for performance benchmark",
+      "Crash-session recovery UX"
+    ]
+  },
+  "goals": [
+    {
+      "id": "G-001",
+      "title": "Contextual Focus Execution",
+      "metric": "Share of started focus sessions linked to exactly one Task or Subtask",
+      "target": "100% of MVP focus sessions",
+      "measurement": "Validate PomodoroSession.work_item_id for every started focus session",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "G-002",
+      "title": "Trustworthy Work Progress",
+      "metric": "Project progress calculations that match completed actionable leaf work items",
+      "target": "100% for supported project hierarchies",
+      "measurement": "Deterministic unit/integration tests across hierarchy fixtures",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "G-003",
+      "title": "Accurate Focus Tracking",
+      "metric": "Focus session completion and elapsed-time correctness across normal execution and Windows lock/sleep",
+      "target": "No session may depend on UI tick count as the source of truth",
+      "measurement": "Timer-engine tests using absolute start/end timestamps plus Windows manual validation",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "G-004",
+      "title": "Reduce Premature Abandonment",
+      "metric": "Early focus stop attempts that pass through the motivational confirmation flow",
+      "target": "100% of user-initiated stops before focus completion",
+      "measurement": "UI/E2E tests for Stop and window-close paths",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "G-005",
+      "title": "Keep the MVP Local and Lightweight",
+      "metric": "Core product workflows that require login, cloud, or network access",
+      "target": "0",
+      "measurement": "Architecture review and offline E2E test",
+      "provenance": "USER_CONFIRMED"
+    }
+  ],
+  "user_journeys": [
+    {
+      "id": "J-001",
+      "title": "Create a project and actionable work",
+      "trigger": "User wants to organize work before focusing.",
+      "preconditions": [
+        "Application is running."
+      ],
+      "main_path": [
+        "Create a Project.",
+        "Optionally create one or more Milestones.",
+        "Create Tasks under the Project or Milestone.",
+        "Optionally create Subtasks under a Task.",
+        "Optionally add Why / Desired Outcome to a Task or Subtask.",
+        "Project detail shows the hierarchy and calculated progress."
+      ],
+      "alternative_paths": [
+        "Skip Milestone and create Tasks directly under Project.",
+        "Skip Subtasks and use Task as the actionable leaf item."
+      ],
+      "failure_paths": [
+        "Required title is empty and save is rejected.",
+        "Persistence fails and the UI reports failure without creating a partial item."
+      ],
+      "completion_state": "At least one actionable Task or Subtask exists and can start a Pomodoro.",
+      "requirement_ids": [
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-007"
+      ]
+    },
+    {
+      "id": "J-002",
+      "title": "Start and run a contextual Pomodoro",
+      "trigger": "User chooses a Task or Subtask and starts focus.",
+      "preconditions": [
+        "Selected work item is not DONE.",
+        "No other Focus or Break timer is active."
+      ],
+      "main_path": [
+        "User selects Start Pomodoro on a Task or Subtask.",
+        "If the work item is TODO, it becomes IN_PROGRESS.",
+        "A 25-minute focus session is created and linked to the work item.",
+        "Small Always-on-Top focus window appears.",
+        "Window shows remaining time, work-item title, optional Why / Desired Outcome, and scrolling motivation.",
+        "Remaining time is derived from absolute time boundaries."
+      ],
+      "alternative_paths": [
+        "User moves the mini window anywhere on the desktop while it remains Always-on-Top."
+      ],
+      "failure_paths": [
+        "A second timer start is rejected while another timer is active.",
+        "Local persistence failure prevents the session from starting and is surfaced to the user."
+      ],
+      "completion_state": "Focus session is active and linked to exactly one Task or Subtask.",
+      "requirement_ids": [
+        "FR-006",
+        "FR-008",
+        "FR-009",
+        "FR-010",
+        "FR-011",
+        "FR-024"
+      ]
+    },
+    {
+      "id": "J-003",
+      "title": "Complete a Pomodoro and choose the next action",
+      "trigger": "A focus session reaches its 25-minute end time.",
+      "preconditions": [
+        "A Focus session is active."
+      ],
+      "main_path": [
+        "Session result becomes COMPLETED.",
+        "Optional completion sound follows the saved setting.",
+        "Completion UI asks whether the work item is finished.",
+        "User chooses Mark Task/Subtask Done, Take Break, or Start Another Pomodoro.",
+        "No work item is auto-completed merely because the focus session completed."
+      ],
+      "alternative_paths": [
+        "Mark Done leads to Task completed state with Take Break or Back to Project.",
+        "Take Break leaves the work item IN_PROGRESS.",
+        "Start Another Pomodoro starts another 25-minute session on the same work item."
+      ],
+      "failure_paths": [
+        "If persistence of the completed session fails, completion is not silently lost; an error/retry path is shown."
+      ],
+      "completion_state": "Completed Pomodoro history is preserved and the user's selected next action is respected.",
+      "requirement_ids": [
+        "FR-013",
+        "FR-014",
+        "FR-016",
+        "FR-017",
+        "FR-023"
+      ]
+    },
+    {
+      "id": "J-004",
+      "title": "Attempt to stop focus early",
+      "trigger": "User presses Stop/Cancel or closes the focus window before the 25-minute focus session is complete.",
+      "preconditions": [
+        "Focus session is active and remaining time is greater than zero."
+      ],
+      "main_path": [
+        "Application displays a motivational confirmation containing current work context.",
+        "User may choose Continue Focus or Stop Anyway.",
+        "Continue Focus preserves the active session.",
+        "Stop Anyway records STOPPED_EARLY and actual focused duration.",
+        "The work item remains IN_PROGRESS and is not marked DONE automatically."
+      ],
+      "alternative_paths": [
+        "Window-close request uses the same early-stop confirmation."
+      ],
+      "failure_paths": [
+        "Closing the confirmation without choosing Stop Anyway leaves the focus session active."
+      ],
+      "completion_state": "Either focus continues or an immutable stopped-early history entry exists.",
+      "requirement_ids": [
+        "FR-012",
+        "FR-016"
+      ]
+    },
+    {
+      "id": "J-005",
+      "title": "Take a break and return to the same work",
+      "trigger": "User selects Take Break after focus completion or task completion.",
+      "preconditions": [
+        "No other timer is active."
+      ],
+      "main_path": [
+        "User starts a 5-minute, 10-minute, or configured custom break.",
+        "Break timer stays Always-on-Top.",
+        "Break can be stopped at any time without motivational friction.",
+        "When break completes, UI identifies the work item from which the break originated.",
+        "User chooses Start Another Pomodoro or Back to Project."
+      ],
+      "alternative_paths": [
+        "User ends the break early and returns to the project without friction."
+      ],
+      "failure_paths": [
+        "A second timer start is rejected while Break is active."
+      ],
+      "completion_state": "User returns to the same work context or project; focus never auto-starts.",
+      "requirement_ids": [
+        "FR-014",
+        "FR-015",
+        "FR-024"
+      ]
+    },
+    {
+      "id": "J-006",
+      "title": "Complete work hierarchy manually",
+      "trigger": "User decides a Subtask, Task, Milestone, or Project is actually complete.",
+      "preconditions": [
+        "Target item exists."
+      ],
+      "main_path": [
+        "User explicitly invokes Mark Done / Mark Complete.",
+        "Task/Subtask becomes DONE only by explicit user action.",
+        "Milestone and Project completion are also explicit.",
+        "If a parent Task has incomplete Subtasks, a warning appears.",
+        "User may Cancel or Mark Done Anyway.",
+        "Progress percentage remains calculated from leaf work-item completion, independent of parent completion state."
+      ],
+      "alternative_paths": [
+        "A DONE Task/Subtask can be reopened to IN_PROGRESS."
+      ],
+      "failure_paths": [
+        "Persistence failure leaves the prior state intact and reports an error."
+      ],
+      "completion_state": "Completion state reflects explicit user confirmation.",
+      "requirement_ids": [
+        "FR-006",
+        "FR-007",
+        "FR-017",
+        "FR-018",
+        "FR-019"
+      ]
+    },
+    {
+      "id": "J-007",
+      "title": "Delete, archive, and restore while preserving history",
+      "trigger": "User wants to remove or hide work.",
+      "preconditions": [
+        "Target item exists."
+      ],
+      "main_path": [
+        "Items without Pomodoro history may be hard-deleted after confirmation.",
+        "Items with Pomodoro history cannot be hard-deleted through the standard UI.",
+        "Projects may be archived without deleting child items or history.",
+        "Archived projects are excluded from the active list.",
+        "User may restore an archived project to ACTIVE."
+      ],
+      "alternative_paths": [
+        "User cancels destructive confirmation and no data changes."
+      ],
+      "failure_paths": [
+        "Persistence failure prevents partial deletion/archive operations."
+      ],
+      "completion_state": "History remains referentially intact.",
+      "requirement_ids": [
+        "FR-020",
+        "FR-021",
+        "FR-022"
+      ]
+    }
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-001",
+      "title": "Manage Projects",
+      "description": "Users can create, view, edit, complete, archive, restore, and conditionally delete Projects. New Projects begin ACTIVE.",
+      "user_value": "Provides the top-level container for focused work.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "A Project requires a non-empty title after trimming whitespace.",
+        "A newly created Project has status ACTIVE.",
+        "Editing a Project preserves all child Milestones, Tasks, Subtasks, and Pomodoro history.",
+        "Mark Project Complete occurs only after explicit user action; it is never triggered solely by 100% calculated progress.",
+        "An archived Project is hidden from the active-project list and remains available in an archived-project view.",
+        "Restoring an archived Project returns it to ACTIVE and preserves children/history.",
+        "A Project with any descendant Pomodoro history cannot be hard-deleted through the standard UI."
+      ],
+      "states": [
+        "Empty",
+        "Validation Error",
+        "Success",
+        "System Error",
+        "Destructive Confirmation"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-001",
+        "J-006",
+        "J-007"
+      ]
+    },
+    {
+      "id": "FR-002",
+      "title": "Manage Optional Milestones",
+      "description": "Users may create, edit, manually complete, and conditionally delete Milestones inside a Project. Milestones are optional.",
+      "user_value": "Supports larger project phases without forcing hierarchy.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "A Project can contain zero Milestones.",
+        "A Milestone requires a non-empty title.",
+        "A Task may exist directly under a Project without a Milestone.",
+        "Completing all work inside a Milestone does not automatically complete the Milestone.",
+        "When all actionable work under a Milestone is complete, the UI may indicate Ready to complete milestone.",
+        "A Milestone with descendant Pomodoro history cannot be hard-deleted through the standard UI."
+      ],
+      "states": [
+        "Empty",
+        "Validation Error",
+        "Success",
+        "System Error",
+        "Destructive Confirmation"
+      ],
+      "related_goal_ids": [
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-001",
+        "J-006",
+        "J-007"
+      ]
+    },
+    {
+      "id": "FR-003",
+      "title": "Manage Tasks",
+      "description": "Users can create, view, edit, manually complete, reopen, and conditionally delete Tasks under a Project or Milestone.",
+      "user_value": "Creates concrete units of project work.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "A Task requires a non-empty title.",
+        "A Task may be created directly under a Project or under a Milestone.",
+        "A new Task begins TODO.",
+        "Starting its first Pomodoro changes TODO to IN_PROGRESS.",
+        "Mark Done changes the Task to DONE only through explicit user action.",
+        "Reopen changes DONE to IN_PROGRESS.",
+        "A Task with Pomodoro history cannot be hard-deleted through the standard UI."
+      ],
+      "states": [
+        "Empty",
+        "Validation Error",
+        "Success",
+        "System Error",
+        "Destructive Confirmation"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-001",
+        "J-002",
+        "J-006",
+        "J-007"
+      ]
+    },
+    {
+      "id": "FR-004",
+      "title": "Manage Optional Subtasks",
+      "description": "Users may create, edit, manually complete, reopen, and conditionally delete Subtasks under a Task. Subtasks are optional.",
+      "user_value": "Allows decomposition without making it mandatory.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "A Task can contain zero Subtasks.",
+        "A Subtask requires a non-empty title.",
+        "A new Subtask begins TODO.",
+        "A Subtask can start and own its own Pomodoro sessions.",
+        "The parent Task remains eligible to start Pomodoro sessions even when Subtasks exist.",
+        "Completing all Subtasks does not automatically mark the parent Task DONE.",
+        "A Subtask with Pomodoro history cannot be hard-deleted through the standard UI."
+      ],
+      "states": [
+        "Empty",
+        "Validation Error",
+        "Success",
+        "System Error",
+        "Destructive Confirmation"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-001",
+        "J-002",
+        "J-006",
+        "J-007"
+      ]
+    },
+    {
+      "id": "FR-005",
+      "title": "Capture Why / Desired Outcome",
+      "description": "Each Task and Subtask may store an optional Why / Desired Outcome text used as focus context.",
+      "user_value": "Reminds the user why the current work matters.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Why / Desired Outcome is optional and does not block saving a Task/Subtask.",
+        "When present, it is displayed in the work-item detail.",
+        "When present, it is available to the active focus window and early-stop confirmation.",
+        "When absent, the UI does not fabricate or download replacement content."
+      ],
+      "states": [
+        "Empty",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-004"
+      ],
+      "related_journey_ids": [
+        "J-001",
+        "J-002",
+        "J-004"
+      ]
+    },
+    {
+      "id": "FR-006",
+      "title": "Enforce Work-Item Status Transitions",
+      "description": "Task/Subtask status is TODO, IN_PROGRESS, or DONE; Pomodoro start and explicit user actions control transitions.",
+      "user_value": "Keeps execution state simple and predictable.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "New Task/Subtask = TODO.",
+        "Starting the first Pomodoro on a TODO item changes it to IN_PROGRESS.",
+        "Completing a Pomodoro does not automatically change the work item to DONE.",
+        "Only explicit Mark Done changes a Task/Subtask to DONE.",
+        "Reopen changes DONE to IN_PROGRESS.",
+        "Stopped-early focus leaves the work item IN_PROGRESS."
+      ],
+      "states": [
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-002",
+        "J-004",
+        "J-006"
+      ]
+    },
+    {
+      "id": "FR-007",
+      "title": "Calculate Leaf-Based Project Progress",
+      "description": "Project progress is the percentage of completed actionable leaf work items; parent Tasks with Subtasks are excluded from the denominator.",
+      "user_value": "Prevents double counting and separates work progress from parent completion confirmation.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "A Task without Subtasks counts as one progress unit.",
+        "A Task with one or more Subtasks does not count as a progress unit; each Subtask counts as one unit.",
+        "Milestones and Projects never count as progress units.",
+        "Each progress unit has equal weight in MVP.",
+        "Progress = DONE leaf units / total leaf units × 100.",
+        "Pomodoro count or focused minutes never changes progress percentage.",
+        "A Project with zero leaf units shows an empty/not-started progress state rather than presenting a misleading calculated percentage."
+      ],
+      "states": [
+        "Empty",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-001",
+        "J-006"
+      ]
+    },
+    {
+      "id": "FR-008",
+      "title": "Start Pomodoro from Task or Subtask",
+      "description": "A 25-minute Focus session can be started only from a selected Task or Subtask and is linked to exactly that work item.",
+      "user_value": "Makes every focus session accountable to real project work.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Start Pomodoro is available on eligible Task and Subtask detail.",
+        "A new focus session stores exactly one work_item_id.",
+        "The work item may be a parent Task even if it has Subtasks.",
+        "A DONE work item must be reopened before starting a new Pomodoro.",
+        "If any Focus or Break timer is already active, a second timer cannot start.",
+        "Focus planned duration is 25 minutes."
+      ],
+      "states": [
+        "Success",
+        "Validation Error",
+        "System Error",
+        "Retry"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-003"
+      ],
+      "related_journey_ids": [
+        "J-002"
+      ]
+    },
+    {
+      "id": "FR-009",
+      "title": "Maintain Accurate Focus Time",
+      "description": "Focus remaining time is derived from absolute start/end timestamps rather than accumulated UI timer ticks.",
+      "user_value": "Ensures lock, sleep, and delayed UI updates do not corrupt focus timing.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "At focus start, the system persists a start time and expected end time.",
+        "Displayed remaining time is recalculated from the expected end time.",
+        "If Windows lock/sleep lasts beyond the expected end time, the session is treated as completed when the application resumes.",
+        "UI refresh callbacks are not the authoritative time source.",
+        "The session cannot report negative remaining time."
+      ],
+      "states": [
+        "Success",
+        "Stale/Resume",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-003"
+      ],
+      "related_journey_ids": [
+        "J-002",
+        "J-003"
+      ]
+    },
+    {
+      "id": "FR-010",
+      "title": "Provide Small Movable Always-on-Top Focus Window",
+      "description": "During Focus and Break, a compact window remains Always-on-Top and can be moved anywhere on the Windows desktop.",
+      "user_value": "Keeps time/context visible without taking over the workspace.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Starting Focus opens or activates the compact timer window.",
+        "The timer window is Always-on-Top while Focus or Break is active.",
+        "User can drag the window to another desktop location without stopping the timer.",
+        "Focus window shows remaining time and work-item title.",
+        "If Why / Desired Outcome exists, it can be shown as contextual text.",
+        "Closing the window during incomplete Focus routes through FR-012 rather than silently terminating the session."
+      ],
+      "states": [
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-004"
+      ],
+      "related_journey_ids": [
+        "J-002",
+        "J-004",
+        "J-005"
+      ]
+    },
+    {
+      "id": "FR-011",
+      "title": "Configure and Scroll Motivational Messages",
+      "description": "Users can manage local Focus motivational messages and early-cancel motivational messages; Focus messages scroll/rotate below the timer.",
+      "user_value": "Maintains the original motivational behavior inside task-context focus.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Setup provides separate collections for Focus Messages and Cancel Messages.",
+        "Users can add, edit, and remove their own messages.",
+        "Saved messages persist across application restarts.",
+        "During active Focus, available Focus Messages are displayed in a scrolling/rotating area below the timer.",
+        "When the Focus Message list is empty, focus still works and no unapproved default/network content is generated."
+      ],
+      "states": [
+        "Empty",
+        "Validation Error",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-004",
+        "G-005"
+      ],
+      "related_journey_ids": [
+        "J-002",
+        "J-004"
+      ]
+    },
+    {
+      "id": "FR-012",
+      "title": "Apply Friction to Early Focus Stop",
+      "description": "Stopping or closing an incomplete Focus session requires a motivational confirmation with Continue Focus and Stop Anyway.",
+      "user_value": "Creates deliberate friction against giving up while preserving user control.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Pressing Stop before focus end displays the confirmation.",
+        "Closing the focus window before focus end displays the same confirmation.",
+        "Confirmation identifies the active work-item title and may show Why / Desired Outcome and a configured Cancel Message.",
+        "Continue Focus dismisses the confirmation and preserves the same active session/end time.",
+        "Stop Anyway ends the session with result STOPPED_EARLY and does not mark the work item DONE.",
+        "No forced waiting period is required before Stop Anyway."
+      ],
+      "states": [
+        "Success",
+        "Destructive Confirmation",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-004"
+      ],
+      "related_journey_ids": [
+        "J-004"
+      ]
+    },
+    {
+      "id": "FR-013",
+      "title": "Ask What Happens After Focus Completion",
+      "description": "When Focus reaches 25 minutes, the user chooses Mark Task/Subtask Done, Take Break, or Start Another Pomodoro.",
+      "user_value": "Separates completion of a focus interval from completion of the underlying work.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "At expected end time the session result becomes COMPLETED.",
+        "The work item is not auto-marked DONE.",
+        "Completion UI offers Mark Done, Take Break, and Start Another Pomodoro.",
+        "Start Another Pomodoro creates a new separate 25-minute session on the same work item.",
+        "After Focus completion the user may close/leave without early-stop friction."
+      ],
+      "states": [
+        "Success",
+        "System Error",
+        "Retry"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-003"
+      ],
+      "related_journey_ids": [
+        "J-003"
+      ]
+    },
+    {
+      "id": "FR-014",
+      "title": "Run Configurable Manual Breaks",
+      "description": "Breaks are started manually, use 5-minute, 10-minute, or configured custom duration, remain Always-on-Top, and can be stopped without friction.",
+      "user_value": "Supports recovery without forcing the user into or out of work.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Break never starts automatically after Focus.",
+        "Setup allows 5-minute, 10-minute, or a valid custom break duration.",
+        "User explicitly starts Break.",
+        "Break timer remains Always-on-Top.",
+        "User can stop Break at any time without motivational confirmation.",
+        "Focus does not auto-start when Break completes."
+      ],
+      "states": [
+        "Validation Error",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-003",
+        "G-005"
+      ],
+      "related_journey_ids": [
+        "J-003",
+        "J-005"
+      ]
+    },
+    {
+      "id": "FR-015",
+      "title": "Return to the Same Work Context After Break",
+      "description": "A break retains the originating Task/Subtask context so the user can continue the same work or return to Project.",
+      "user_value": "Reduces context switching between focus intervals.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "A Break started from a Focus completion stores the originating work-item reference.",
+        "At Break completion, the UI identifies that originating work item.",
+        "Actions are Start Another Pomodoro and Back to Project.",
+        "Start Another Pomodoro targets the same originating work item.",
+        "No next work item is selected automatically."
+      ],
+      "states": [
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-001"
+      ],
+      "related_journey_ids": [
+        "J-005"
+      ]
+    },
+    {
+      "id": "FR-016",
+      "title": "Preserve Pomodoro History",
+      "description": "Every ended Focus session is stored as immutable MVP history linked to the originating work item and Project.",
+      "user_value": "Provides a trustworthy effort record without using it as completion progress.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "History stores work item, Project, start time, end time, planned duration, actual focused duration, and result.",
+        "Supported result values are COMPLETED and STOPPED_EARLY.",
+        "History records whether the work item was marked DONE as the immediate post-session action when applicable.",
+        "History is viewable from the work item.",
+        "History is not editable through the MVP UI.",
+        "Pomodoro count and focused minutes are summaries of history and do not modify project progress."
+      ],
+      "states": [
+        "Empty",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-002",
+        "G-003"
+      ],
+      "related_journey_ids": [
+        "J-003",
+        "J-004"
+      ]
+    },
+    {
+      "id": "FR-017",
+      "title": "Complete Tasks/Subtasks Manually with Child Warning",
+      "description": "Task/Subtask completion is explicit; marking a parent Task DONE while any Subtask is incomplete requires a warning but remains allowed.",
+      "user_value": "Preserves user judgment while preventing accidental closure of unfinished child work.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Mark Done requires an explicit user action.",
+        "If a Task has no incomplete Subtasks, Mark Done changes it to DONE.",
+        "If one or more Subtasks are not DONE, the UI reports the number of incomplete Subtasks and offers Cancel and Mark Done Anyway.",
+        "Cancel preserves the prior Task status.",
+        "Mark Done Anyway sets the parent Task to DONE without changing child Subtask statuses.",
+        "Completing a Subtask never auto-completes its parent Task."
+      ],
+      "states": [
+        "Success",
+        "Destructive Confirmation",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-003",
+        "J-006"
+      ]
+    },
+    {
+      "id": "FR-018",
+      "title": "Complete Milestones Manually",
+      "description": "Milestones are completed only by explicit user confirmation.",
+      "user_value": "Allows phase review even after all underlying actionable work is done.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Completing all leaf work under a Milestone does not change Milestone completion automatically.",
+        "When all actionable work under a Milestone is DONE, the UI may indicate Ready to complete milestone.",
+        "Explicit Mark Milestone Complete changes its completion state.",
+        "Milestone completion does not change Task/Subtask statuses."
+      ],
+      "states": [
+        "Empty",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-006"
+      ]
+    },
+    {
+      "id": "FR-019",
+      "title": "Complete Projects Manually",
+      "description": "Projects are completed only by explicit user confirmation, independent of calculated progress.",
+      "user_value": "Ensures project closure reflects user judgment rather than arithmetic alone.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "A Project reaching 100% leaf progress is not auto-completed.",
+        "At 100% progress the UI may indicate All project tasks completed / Ready to complete.",
+        "Explicit Mark Project Complete changes status to COMPLETED.",
+        "Completing a Project preserves the full hierarchy and Pomodoro history."
+      ],
+      "states": [
+        "Empty",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-006"
+      ]
+    },
+    {
+      "id": "FR-020",
+      "title": "Protect History During Deletion",
+      "description": "Hard deletion through the standard UI is allowed only when the target item and its descendants have no Pomodoro history.",
+      "user_value": "Prevents orphaned or misleading focus history.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Delete requires confirmation.",
+        "An item with no own or descendant Pomodoro history may be hard-deleted.",
+        "An item with own or descendant Pomodoro history cannot be hard-deleted through standard UI.",
+        "Rejected deletion leaves the hierarchy and history unchanged.",
+        "Cancelling delete leaves data unchanged."
+      ],
+      "states": [
+        "Destructive Confirmation",
+        "Permission Denied/Protected",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-002"
+      ],
+      "related_journey_ids": [
+        "J-007"
+      ]
+    },
+    {
+      "id": "FR-021",
+      "title": "Archive and Restore Projects",
+      "description": "Projects can be archived and restored while preserving all hierarchy and history.",
+      "user_value": "Keeps inactive work out of the active list without destroying records.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Archive removes the Project from the active-project list.",
+        "Archive preserves Milestones, Tasks, Subtasks, Why text, and Pomodoro history.",
+        "Archived Project appears in an archived-project view/list.",
+        "Restore returns the Project to ACTIVE.",
+        "Restore does not alter child status or history."
+      ],
+      "states": [
+        "Empty",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-002",
+        "G-005"
+      ],
+      "related_journey_ids": [
+        "J-007"
+      ]
+    },
+    {
+      "id": "FR-022",
+      "title": "Persist MVP Data Locally",
+      "description": "Projects, hierarchy, settings, messages, timer state needed for lock/sleep correctness, and history are stored locally on the Windows device.",
+      "user_value": "Allows the application to work without accounts, cloud, or internet.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Core workflows function with the device offline.",
+        "No login is required.",
+        "Project/work-item data and settings remain after normal application restart.",
+        "No third-party network service is required for MVP operation.",
+        "The implementation must not add cloud sync or telemetry as an unstated MVP dependency."
+      ],
+      "states": [
+        "Offline",
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-005"
+      ],
+      "related_journey_ids": [
+        "J-001",
+        "J-002",
+        "J-007"
+      ]
+    },
+    {
+      "id": "FR-023",
+      "title": "Configure Completion Sound",
+      "description": "Users can enable or disable a local sound when a Focus session completes.",
+      "user_value": "Provides completion feedback without making sound mandatory.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Setup exposes completion sound On/Off.",
+        "The setting persists locally.",
+        "When On, a Focus completion produces the configured application completion sound behavior.",
+        "When Off, Focus completion is silent.",
+        "Stopped-early Focus does not trigger Focus-complete sound."
+      ],
+      "states": [
+        "Success",
+        "System Error"
+      ],
+      "related_goal_ids": [
+        "G-003"
+      ],
+      "related_journey_ids": [
+        "J-003"
+      ]
+    },
+    {
+      "id": "FR-024",
+      "title": "Allow Only One Active Timer",
+      "description": "The application permits at most one active Focus or Break timer at a time.",
+      "user_value": "Prevents ambiguous session ownership and timing.",
+      "priority": "MVP",
+      "provenance": "USER_CONFIRMED",
+      "dependencies": [],
+      "preconditions": [],
+      "acceptance_criteria": [
+        "Starting Focus while Focus or Break is active is rejected.",
+        "Starting Break while Focus or Break is active is rejected.",
+        "After the active timer ends or is explicitly stopped, a new timer can start.",
+        "The UI clearly identifies the currently active timer type and associated work item where applicable."
+      ],
+      "states": [
+        "Validation Error",
+        "Success"
+      ],
+      "related_goal_ids": [
+        "G-001",
+        "G-003"
+      ],
+      "related_journey_ids": [
+        "J-002",
+        "J-005"
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-001",
+      "category": "Compatibility",
+      "requirement": "The MVP shall run as a Windows 11 desktop application using the confirmed C# + .NET 10 + WPF stack.",
+      "target": "Windows 11; C#; .NET 10; WPF",
+      "measurement": "Build and manual smoke test on supported Windows 11 environment",
+      "scope": "Entire MVP",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "NFR-002",
+      "category": "Reliability",
+      "requirement": "Timer correctness shall be based on absolute time boundaries so delayed UI callbacks, lock, or sleep do not extend the planned Focus interval.",
+      "target": "No authoritative timing from tick accumulation",
+      "measurement": "Unit tests with injected clock plus lock/sleep manual validation",
+      "scope": "Focus and Break timer engine",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "NFR-003",
+      "category": "Privacy",
+      "requirement": "Core MVP operation shall not require transmitting project, task, motivational-message, or Pomodoro-history data to a remote service.",
+      "target": "0 required remote data transfers for core MVP",
+      "measurement": "Architecture/network inspection during release validation",
+      "scope": "Core MVP",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "NFR-004",
+      "category": "Reliability",
+      "requirement": "Local write operations shall avoid intentionally leaving partial hierarchy/session records when a save operation fails.",
+      "target": "Atomic/transactional behavior where multiple persisted records must change together; exact storage mechanism is implementation-defined",
+      "measurement": "Failure-path integration tests",
+      "scope": "Local persistence",
+      "provenance": "GPT_RECOMMENDED"
+    },
+    {
+      "id": "NFR-005",
+      "category": "Performance",
+      "requirement": "Project-detail and history UI performance shall have an explicit benchmark before optimization claims are made.",
+      "target": "UNSPECIFIED pending expected project/work-item/history volume",
+      "measurement": "Define benchmark fixtures before performance acceptance testing",
+      "scope": "Project and history views",
+      "provenance": "UNSPECIFIED"
+    },
+    {
+      "id": "NFR-006",
+      "category": "Maintainability",
+      "requirement": "Timer calculation, project hierarchy/progress calculation, persistence, and WPF presentation logic should be separable enough to unit-test domain behavior without driving the UI.",
+      "target": "Domain timer/progress rules covered by automated unit tests",
+      "measurement": "Test suite and code review",
+      "scope": "Application architecture",
+      "provenance": "GPT_RECOMMENDED"
+    },
+    {
+      "id": "NFR-007",
+      "category": "Accessibility",
+      "requirement": "Primary controls shall be usable with keyboard navigation and shall expose meaningful accessible names where supported by WPF.",
+      "target": "Keyboard path for create/edit/start/stop/complete/break flows; exact WCAG conformance level UNSPECIFIED",
+      "measurement": "Manual keyboard/accessibility smoke test",
+      "scope": "Primary MVP windows/dialogs",
+      "provenance": "GPT_RECOMMENDED"
+    }
+  ],
+  "data_requirements": [
+    {
+      "id": "DATA-001",
+      "entity": "Project",
+      "description": "Top-level project container.",
+      "fields": [
+        "id",
+        "title",
+        "status: ACTIVE|COMPLETED|ARCHIVED",
+        "created_at",
+        "updated_at"
+      ],
+      "validation": [
+        "title non-empty after trim"
+      ],
+      "sensitivity": "Local productivity data; no regulated classification confirmed",
+      "lifecycle": "Create/edit; manual complete; archive/restore; hard delete only if no descendant history",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "DATA-002",
+      "entity": "Milestone",
+      "description": "Optional phase within a Project.",
+      "fields": [
+        "id",
+        "project_id",
+        "title",
+        "completion_state",
+        "created_at",
+        "updated_at"
+      ],
+      "validation": [
+        "title non-empty",
+        "project_id required"
+      ],
+      "sensitivity": "Local productivity data",
+      "lifecycle": "Create/edit/manual complete; conditional hard delete",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "DATA-003",
+      "entity": "Task",
+      "description": "Concrete work item under Project or Milestone.",
+      "fields": [
+        "id",
+        "project_id",
+        "milestone_id optional",
+        "title",
+        "why_desired_outcome optional",
+        "status TODO|IN_PROGRESS|DONE",
+        "created_at",
+        "updated_at"
+      ],
+      "validation": [
+        "title non-empty",
+        "must belong to Project",
+        "milestone when set must belong to same Project"
+      ],
+      "sensitivity": "Local productivity data",
+      "lifecycle": "Create/edit/reopen/complete; conditional hard delete",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "DATA-004",
+      "entity": "Subtask",
+      "description": "Optional child work item under Task.",
+      "fields": [
+        "id",
+        "task_id",
+        "title",
+        "why_desired_outcome optional",
+        "status TODO|IN_PROGRESS|DONE",
+        "created_at",
+        "updated_at"
+      ],
+      "validation": [
+        "title non-empty",
+        "task_id required"
+      ],
+      "sensitivity": "Local productivity data",
+      "lifecycle": "Create/edit/reopen/complete; conditional hard delete",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "DATA-005",
+      "entity": "PomodoroSession",
+      "description": "Immutable-ended focus history linked to exactly one Task or Subtask.",
+      "fields": [
+        "id",
+        "project_id",
+        "work_item_type Task|Subtask",
+        "work_item_id",
+        "started_at",
+        "expected_end_at",
+        "ended_at",
+        "planned_duration",
+        "actual_focus_duration",
+        "result COMPLETED|STOPPED_EARLY",
+        "marked_done_after_session boolean"
+      ],
+      "validation": [
+        "exactly one work item",
+        "planned focus duration 25 minutes for MVP",
+        "actual duration non-negative"
+      ],
+      "sensitivity": "Local productivity activity data",
+      "lifecycle": "Created at focus start; finalized on complete/early stop; ended history not editable in MVP UI",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "DATA-006",
+      "entity": "BreakSession",
+      "description": "Temporary/local break timing state retaining originating work-item context when applicable.",
+      "fields": [
+        "id",
+        "originating_work_item_id optional",
+        "started_at",
+        "expected_end_at",
+        "ended_at optional",
+        "planned_duration"
+      ],
+      "validation": [
+        "duration must be a valid configured break duration"
+      ],
+      "sensitivity": "Local productivity activity data",
+      "lifecycle": "Created on explicit Start Break; finalized on completion/early stop",
+      "provenance": "USER_CONFIRMED"
+    },
+    {
+      "id": "DATA-007",
+      "entity": "Settings",
+      "description": "Local Pomodoro and UI behavior settings.",
+      "fields": [
+        "break_duration option/custom",
+        "completion_sound_enabled",
+        "focus_messages",
+        "cancel_messages",
+        "timer_window_position optional"
+      ],
+      "validation": [
+        "custom break duration must be positive; exact maximum UNSPECIFIED"
+      ],
+      "sensitivity": "Local user preferences and free-text motivation",
+      "lifecycle": "Persist until user edits/removes or app data is deleted",
+      "provenance": "USER_CONFIRMED"
+    }
+  ],
+  "integrations": [],
+  "ai_requirements": [],
+  "roles_permissions": [
+    {
+      "role": "Local user",
+      "capability": "Read/create/update local projects, milestones, tasks, subtasks and settings",
+      "allowed": true,
+      "conditions": "Single local-user MVP; no account or role system."
+    },
+    {
+      "role": "Local user",
+      "capability": "Hard-delete item with no own/descendant Pomodoro history",
+      "allowed": true,
+      "conditions": "Destructive confirmation required."
+    },
+    {
+      "role": "Local user",
+      "capability": "Hard-delete item with own/descendant Pomodoro history",
+      "allowed": false,
+      "conditions": "Use non-destructive project archive where applicable."
+    }
+  ],
+  "application_states": [
+    "Initial/Empty Projects",
+    "Empty Project/No Leaf Work",
+    "Success",
+    "Validation Error",
+    "Local Persistence Error",
+    "Active Focus",
+    "Active Break",
+    "Focus Complete",
+    "Break Complete",
+    "Early-Stop Confirmation",
+    "Delete Confirmation",
+    "Incomplete-Subtask Completion Warning",
+    "Offline",
+    "Windows Lock/Sleep Resume",
+    "Protected Delete",
+    "Retry"
+  ],
+  "security_privacy": [
+    {
+      "text": "No authentication is required for the confirmed single-local-user MVP.",
+      "provenance": "USER_CONFIRMED",
+      "source": "Discovery",
+      "requires_confirmation": false
+    },
+    {
+      "text": "Core MVP must not require sending project/task/motivation/history data to third-party services.",
+      "provenance": "USER_CONFIRMED",
+      "source": "Discovery",
+      "requires_confirmation": false
+    },
+    {
+      "text": "Validate free-text titles/messages and persisted data safely; do not treat stored text as executable instructions/code.",
+      "provenance": "GPT_RECOMMENDED",
+      "source": "Security baseline",
+      "requires_confirmation": false
+    },
+    {
+      "text": "Do not store secrets because no remote integration is approved for MVP.",
+      "provenance": "GPT_RECOMMENDED",
+      "source": "Security baseline",
+      "requires_confirmation": false
+    },
+    {
+      "text": "Do not add telemetry or third-party network SDKs as unstated MVP dependencies.",
+      "provenance": "GPT_RECOMMENDED",
+      "source": "Scope discipline",
+      "requires_confirmation": false
+    }
+  ],
+  "analytics_observability": [
+    {
+      "text": "MVP product analytics are local-only; no remote analytics service is approved.",
+      "provenance": "USER_CONFIRMED",
+      "source": "Local-only scope",
+      "requires_confirmation": false
+    },
+    {
+      "text": "Operational errors should be diagnosable without logging unnecessary user free-text content.",
+      "provenance": "GPT_RECOMMENDED",
+      "source": "Security baseline",
+      "requires_confirmation": false
+    },
+    {
+      "text": "Pomodoro history is product data, not remote telemetry.",
+      "provenance": "USER_CONFIRMED",
+      "source": "Discovery",
+      "requires_confirmation": false
+    }
+  ],
+  "testing": [
+    {
+      "id": "TEST-001",
+      "type": "Unit",
+      "intent": "Validate leaf-work-item project progress including parent Tasks with Subtasks and zero-leaf projects.",
+      "requirement_ids": [
+        "FR-007"
+      ]
+    },
+    {
+      "id": "TEST-002",
+      "type": "Unit",
+      "intent": "Validate Task/Subtask status transitions and no automatic DONE on Pomodoro completion.",
+      "requirement_ids": [
+        "FR-006",
+        "FR-013",
+        "FR-017"
+      ]
+    },
+    {
+      "id": "TEST-003",
+      "type": "Unit",
+      "intent": "Validate absolute-time timer behavior with normal passage, delayed callbacks, lock/sleep simulation, and overdue resume.",
+      "requirement_ids": [
+        "FR-009",
+        "FR-024"
+      ]
+    },
+    {
+      "id": "TEST-004",
+      "type": "Integration",
+      "intent": "Validate Pomodoro start/finalization persistence and immutable completed/stopped-early history.",
+      "requirement_ids": [
+        "FR-008",
+        "FR-016",
+        "FR-022"
+      ]
+    },
+    {
+      "id": "TEST-005",
+      "type": "UI/E2E",
+      "intent": "Validate Always-on-Top focus window, draggable behavior, context display, and early-stop confirmation via Stop and Close.",
+      "requirement_ids": [
+        "FR-010",
+        "FR-012"
+      ]
+    },
+    {
+      "id": "TEST-006",
+      "type": "UI/E2E",
+      "intent": "Validate completion choices: Mark Done, Take Break, and Start Another Pomodoro without auto-completion.",
+      "requirement_ids": [
+        "FR-013",
+        "FR-017",
+        "FR-023"
+      ]
+    },
+    {
+      "id": "TEST-007",
+      "type": "UI/E2E",
+      "intent": "Validate 5/10/custom manual break, frictionless break stop, same-work return, and no auto-started focus.",
+      "requirement_ids": [
+        "FR-014",
+        "FR-015",
+        "FR-024"
+      ]
+    },
+    {
+      "id": "TEST-008",
+      "type": "Integration",
+      "intent": "Validate delete protection when own/descendant history exists and archive/restore preservation.",
+      "requirement_ids": [
+        "FR-020",
+        "FR-021",
+        "FR-022"
+      ]
+    },
+    {
+      "id": "TEST-009",
+      "type": "Integration",
+      "intent": "Validate local persistence of Projects, hierarchy, Why text, motivation messages, settings, and history across restart.",
+      "requirement_ids": [
+        "FR-001",
+        "FR-002",
+        "FR-003",
+        "FR-004",
+        "FR-005",
+        "FR-011",
+        "FR-022",
+        "FR-023"
+      ]
+    },
+    {
+      "id": "TEST-010",
+      "type": "UI/E2E",
+      "intent": "Validate incomplete-subtask warning and Mark Done Anyway without altering child statuses.",
+      "requirement_ids": [
+        "FR-017"
+      ]
+    },
+    {
+      "id": "TEST-011",
+      "type": "Offline E2E",
+      "intent": "Validate core project/focus/break/history workflows without network access or login.",
+      "requirement_ids": [
+        "FR-022"
+      ]
+    },
+    {
+      "id": "TEST-012",
+      "type": "Manual Windows",
+      "intent": "Validate expected Focus completion after Windows 11 lock/sleep exceeds remaining focus time.",
+      "requirement_ids": [
+        "FR-009",
+        "NFR-001",
+        "NFR-002"
+      ]
+    }
+  ],
+  "release_criteria": [
+    "All MVP FR acceptance criteria pass.",
+    "All blocking questions remain resolved; non-blocking questions are documented.",
+    "Automated progress/status/timer tests pass.",
+    "Windows 11 Always-on-Top, drag, early-stop, sound, break, and lock/sleep manual tests pass.",
+    "Offline core-flow test passes without login/network.",
+    "Delete protection and archive/restore preserve history.",
+    "Coding agent reports any deviation from this PRD; no unapproved feature/technology is introduced."
+  ],
+  "risks": [
+    {
+      "id": "RISK-001",
+      "description": "Progress can become misleading if parent Tasks and Subtasks are double-counted.",
+      "likelihood": "MEDIUM",
+      "impact": "HIGH",
+      "mitigation": "Use the confirmed leaf-work-item algorithm and automated fixtures.",
+      "contingency": "Disable/revert progress display if reconciliation tests fail.",
+      "related_requirement_ids": [
+        "FR-007"
+      ],
+      "status": "MITIGATED_BY_DESIGN"
+    },
+    {
+      "id": "RISK-002",
+      "description": "UI timer tick accumulation can make sessions inaccurate across sleep/lock or delayed rendering.",
+      "likelihood": "HIGH",
+      "impact": "HIGH",
+      "mitigation": "Use persisted absolute start/expected-end timestamps; UI callbacks only refresh display.",
+      "contingency": "Reconcile active session against current clock on resume/activation.",
+      "related_requirement_ids": [
+        "FR-009"
+      ],
+      "status": "MITIGATED_BY_DESIGN"
+    },
+    {
+      "id": "RISK-003",
+      "description": "Deleting work items with focus history can orphan or misrepresent historical effort.",
+      "likelihood": "MEDIUM",
+      "impact": "HIGH",
+      "mitigation": "Block standard hard-delete when own/descendant Pomodoro history exists; archive Projects instead.",
+      "contingency": "Preserve records and expose a non-destructive archive path.",
+      "related_requirement_ids": [
+        "FR-020",
+        "FR-021"
+      ],
+      "status": "MITIGATED_BY_DESIGN"
+    },
+    {
+      "id": "RISK-004",
+      "description": "A parent Task can be marked DONE while child Subtasks remain incomplete, creating intentionally inconsistent-looking states.",
+      "likelihood": "MEDIUM",
+      "impact": "MEDIUM",
+      "mitigation": "Show count-aware warning and require Mark Done Anyway confirmation; do not silently mutate child status.",
+      "contingency": "Allow reopening parent Task.",
+      "related_requirement_ids": [
+        "FR-017"
+      ],
+      "status": "ACCEPTED_WITH_WARNING"
+    },
+    {
+      "id": "RISK-005",
+      "description": "Unknown expected project/history volume means UI performance targets cannot yet be objectively certified.",
+      "likelihood": "UNKNOWN",
+      "impact": "MEDIUM",
+      "mitigation": "Keep target UNSPECIFIED and add benchmark fixtures before performance claims.",
+      "contingency": "Profile and optimize after representative volume is known.",
+      "related_requirement_ids": [
+        "NFR-005"
+      ],
+      "status": "OPEN_NON_BLOCKING"
+    },
+    {
+      "id": "RISK-006",
+      "description": "Unexpected process termination can leave an active session requiring reconciliation on next launch.",
+      "likelihood": "MEDIUM",
+      "impact": "MEDIUM",
+      "mitigation": "Persist enough active timer boundary state for lock/sleep correctness; crash-recovery UX is explicitly not an approved MVP feature.",
+      "contingency": "Report unresolved active session behavior as a known limitation rather than inventing recovery semantics.",
+      "related_requirement_ids": [
+        "FR-009",
+        "FR-022"
+      ],
+      "status": "OPEN_NON_BLOCKING"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "ASM-001",
+      "text": "Focus time continues according to wall-clock time while Windows is locked or sleeping.",
+      "rationale": "Explicitly confirmed during discovery.",
+      "risk": "None remaining for product semantics; implementation must preserve it.",
+      "validation_method": "Automated injected-clock tests plus Windows 11 lock/sleep manual test.",
+      "owner": "Product/Engineering",
+      "status": "VALIDATED"
+    },
+    {
+      "id": "ASM-002",
+      "text": "Only one Focus or Break timer may be active at any time.",
+      "rationale": "Explicitly confirmed during discovery.",
+      "risk": "None remaining for product semantics.",
+      "validation_method": "Start-conflict automated/UI tests.",
+      "owner": "Product/Engineering",
+      "status": "VALIDATED"
+    },
+    {
+      "id": "ASM-003",
+      "text": "A Project with zero actionable leaf work items uses an empty/not-started progress state rather than a misleading calculated percentage.",
+      "rationale": "Needed to make the confirmed progress formula defined for an empty denominator.",
+      "risk": "Low; exact visual treatment remains design-level.",
+      "validation_method": "Review empty-state implementation against FR-007.",
+      "owner": "Product/Engineering",
+      "status": "OPEN"
+    },
+    {
+      "id": "ASM-004",
+      "text": "Moving an existing Task between compatible Milestones/Projects, if implemented, must preserve the Task identity and its historical sessions.",
+      "rationale": "History should remain attached to the work performed, not to a newly created replacement record.",
+      "risk": "Move functionality itself is not explicitly required in MVP; agent must not add it unless needed/approved.",
+      "validation_method": "Do not implement move behavior unless separately approved; if added, preserve IDs/history.",
+      "owner": "Product",
+      "status": "OPEN"
+    },
+    {
+      "id": "ASM-005",
+      "text": "Normal process crash/forced termination does not have a user-confirmed auto-resume/recovery flow in MVP.",
+      "rationale": "Crash recovery was not approved as product behavior.",
+      "risk": "An interrupted active session may need conservative handling or be documented as a limitation.",
+      "validation_method": "Agent must surface any needed decision instead of inventing recovery UX.",
+      "owner": "Product",
+      "status": "OPEN"
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "OQ-001",
+      "question": "What is the final product name?",
+      "impact": "Branding only; does not block implementation of product behavior.",
+      "blocking": false,
+      "owner": "Product",
+      "related_requirement_ids": []
+    },
+    {
+      "id": "OQ-002",
+      "question": "What installer/distribution format should be used for the first release?",
+      "impact": "Affects packaging/release pipeline, not core application behavior.",
+      "blocking": false,
+      "owner": "Product/Engineering",
+      "related_requirement_ids": [
+        "NFR-001"
+      ]
+    },
+    {
+      "id": "OQ-003",
+      "question": "What representative maximum Project/Task/Subtask/Pomodoro-history volume should define performance benchmarks?",
+      "impact": "Needed to replace NFR-005 UNSPECIFIED with measurable UI-performance targets.",
+      "blocking": false,
+      "owner": "Product",
+      "related_requirement_ids": [
+        "NFR-005"
+      ]
+    },
+    {
+      "id": "OQ-004",
+      "question": "Should crash/forced-termination session recovery become a future approved feature?",
+      "impact": "Would define next-launch reconciliation UX for interrupted active timers.",
+      "blocking": false,
+      "owner": "Product",
+      "related_requirement_ids": [
+        "FR-009",
+        "FR-022"
+      ]
+    },
+    {
+      "id": "OQ-005",
+      "question": "Should custom break duration have a product-level maximum?",
+      "impact": "Validation boundary is currently implementation-defined except that the value must be positive.",
+      "blocking": false,
+      "owner": "Product",
+      "related_requirement_ids": [
+        "FR-014"
+      ]
+    }
+  ],
+  "traceability": [
+    {
+      "requirement_id": "FR-001",
+      "goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-001",
+        "J-006",
+        "J-007"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-009"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-002",
+      "goal_ids": [
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-001",
+        "J-006",
+        "J-007"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-009"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-003",
+      "goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-001",
+        "J-002",
+        "J-006",
+        "J-007"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-009"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-004",
+      "goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-001",
+        "J-002",
+        "J-006",
+        "J-007"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-009"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-005",
+      "goal_ids": [
+        "G-001",
+        "G-004"
+      ],
+      "journey_ids": [
+        "J-001",
+        "J-002",
+        "J-004"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-009"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-006",
+      "goal_ids": [
+        "G-001",
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-002",
+        "J-004",
+        "J-006"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-002"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-007",
+      "goal_ids": [
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-001",
+        "J-006"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-001"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-008",
+      "goal_ids": [
+        "G-001",
+        "G-003"
+      ],
+      "journey_ids": [
+        "J-002"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-004"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-009",
+      "goal_ids": [
+        "G-003"
+      ],
+      "journey_ids": [
+        "J-002",
+        "J-003"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-003",
+        "TEST-012"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-010",
+      "goal_ids": [
+        "G-001",
+        "G-004"
+      ],
+      "journey_ids": [
+        "J-002",
+        "J-004",
+        "J-005"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-005"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-011",
+      "goal_ids": [
+        "G-004",
+        "G-005"
+      ],
+      "journey_ids": [
+        "J-002",
+        "J-004"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-009"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-012",
+      "goal_ids": [
+        "G-004"
+      ],
+      "journey_ids": [
+        "J-004"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-005"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-013",
+      "goal_ids": [
+        "G-001",
+        "G-003"
+      ],
+      "journey_ids": [
+        "J-003"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-002",
+        "TEST-006"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-014",
+      "goal_ids": [
+        "G-003",
+        "G-005"
+      ],
+      "journey_ids": [
+        "J-003",
+        "J-005"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-007"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-015",
+      "goal_ids": [
+        "G-001"
+      ],
+      "journey_ids": [
+        "J-005"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-007"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-016",
+      "goal_ids": [
+        "G-001",
+        "G-002",
+        "G-003"
+      ],
+      "journey_ids": [
+        "J-003",
+        "J-004"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-004"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-017",
+      "goal_ids": [
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-003",
+        "J-006"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-002",
+        "TEST-006",
+        "TEST-010"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-018",
+      "goal_ids": [
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-006"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-019",
+      "goal_ids": [
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-006"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-020",
+      "goal_ids": [
+        "G-002"
+      ],
+      "journey_ids": [
+        "J-007"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-008"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-021",
+      "goal_ids": [
+        "G-002",
+        "G-005"
+      ],
+      "journey_ids": [
+        "J-007"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-008"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-022",
+      "goal_ids": [
+        "G-005"
+      ],
+      "journey_ids": [
+        "J-001",
+        "J-002",
+        "J-007"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-004",
+        "TEST-008",
+        "TEST-009",
+        "TEST-011"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-023",
+      "goal_ids": [
+        "G-003"
+      ],
+      "journey_ids": [
+        "J-003"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-006",
+        "TEST-009"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "FR-024",
+      "goal_ids": [
+        "G-001",
+        "G-003"
+      ],
+      "journey_ids": [
+        "J-002",
+        "J-005"
+      ],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-003",
+        "TEST-007"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "NFR-001",
+      "goal_ids": [
+        "G-003"
+      ],
+      "journey_ids": [],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-012"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "NFR-002",
+      "goal_ids": [
+        "G-003"
+      ],
+      "journey_ids": [],
+      "acceptance_criteria_present": true,
+      "test_ids": [
+        "TEST-012"
+      ],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "NFR-003",
+      "goal_ids": [
+        "G-005"
+      ],
+      "journey_ids": [],
+      "acceptance_criteria_present": true,
+      "test_ids": [],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "NFR-004",
+      "goal_ids": [],
+      "journey_ids": [],
+      "acceptance_criteria_present": true,
+      "test_ids": [],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "NFR-005",
+      "goal_ids": [],
+      "journey_ids": [],
+      "acceptance_criteria_present": true,
+      "test_ids": [],
+      "status": "MVP_TARGET_UNSPECIFIED"
+    },
+    {
+      "requirement_id": "NFR-006",
+      "goal_ids": [],
+      "journey_ids": [],
+      "acceptance_criteria_present": true,
+      "test_ids": [],
+      "status": "MVP"
+    },
+    {
+      "requirement_id": "NFR-007",
+      "goal_ids": [],
+      "journey_ids": [],
+      "acceptance_criteria_present": true,
+      "test_ids": [],
+      "status": "MVP"
+    }
+  ],
+  "coding_agent_handoff": {
+    "source_prd": "Project-Focused Pomodoro PRD v2.0",
+    "status": "APPROVED_FOR_MVP_IMPLEMENTATION",
+    "confirmed_stack": [
+      "C#",
+      ".NET 10",
+      "WPF",
+      "Windows 11"
+    ],
+    "repository_status": "Unknown; inspect before naming files/paths or selecting a local persistence library.",
+    "prohibited_scope_additions": [
+      "Cloud",
+      "Accounts",
+      "AI",
+      "Collaboration",
+      "Kanban",
+      "Gantt",
+      "Calendar",
+      "Auto-start next Pomodoro",
+      "Automatic task completion"
+    ],
+    "implementation_rule": "Every implementation task must trace to FR/NFR IDs in the PRD."
+  }
+}
